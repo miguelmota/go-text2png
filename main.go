@@ -69,7 +69,7 @@ func main() {
     fg := image.Black
     fgQ := r.URL.Query().Get("fg")
     if fgQ == "" {
-      fgQ = "white"
+      fgQ = "black"
     }
     if fgQ == "black" {
       fg = image.Black
