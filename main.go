@@ -1,43 +1,101 @@
 package main
 
+/*
+ * Sorry for bad code,
+ * I'm still a beginner at golang.
+ */
+
+ /*
+  TODO
+  dpi
+  hiting
+  port process env
+ */
+
 import (
-  //"bufio"
-  "flag"
-  //"fmt"
   "image"
   "image/draw"
   "image/png"
-  //"image/jpeg"
   "bytes"
   "io/ioutil"
   "log"
   "math"
   "net/http"
   "strconv"
-  //"os"
 
   "github.com/golang/freetype/truetype"
   "golang.org/x/image/font"
   "golang.org/x/image/math/fixed"
 )
 
-var (
-  dpi      = flag.Float64("dpi", 72, "screen resolution in Dots Per Inch")
-  fontfile = flag.String("fontfile", "./luxisr.ttf", "filename of the ttf font")
-  hinting  = flag.String("hinting", "none", "none | full")
-  size     = flag.Float64("size", 12, "font size in points")
-  spacing  = flag.Float64("spacing", 1.2, "line spacing (e.g. 2 means double spaced)")
-)
-
 func main() {
   // HTTP Request handler
   http.HandleFunc("/image", func (w http.ResponseWriter, r *http.Request) {
-    flag.Parse()
-
+    // Read query params
     text := []string{r.URL.Query().Get("text")}
 
-    // Read the font data.
-    fontBytes, err := ioutil.ReadFile(*fontfile)
+    widthQ := r.URL.Query().Get("width")
+    if widthQ == "" {
+      widthQ = "200"
+    }
+    width64, _ := strconv.ParseInt(widthQ, 10, 64)
+    width := int(width64)
+
+    heightQ := r.URL.Query().Get("height")
+    if heightQ == "" {
+      heightQ = "20"
+    }
+    height64, _ := strconv.ParseInt(heightQ, 10, 64)
+    height := int(height64)
+
+    sizeQ := r.URL.Query().Get("size")
+    if sizeQ == "" {
+      sizeQ = "12"
+    }
+    size, err := strconv.ParseFloat(sizeQ, 64)
+    if err != nil {
+      size = 12.0
+    }
+
+    lineheightQ := r.URL.Query().Get("lineheight")
+    if lineheightQ == "" {
+      lineheightQ = "1.2"
+    }
+    lineheight, err := strconv.ParseFloat(lineheightQ, 64)
+    if err != nil {
+      lineheight = 1.2
+    }
+
+    fg := image.Black
+    fgQ := r.URL.Query().Get("fg")
+    if fgQ == "" {
+      fgQ = "white"
+    }
+    if fgQ == "black" {
+      fg = image.Black
+    } else if fgQ == "white" {
+      fg = image.White
+    }
+
+    bg := image.White
+    bgQ := r.URL.Query().Get("bg")
+    if bgQ == "" {
+      bgQ = "white"
+    }
+    if bgQ == "black" {
+      bg = image.Black
+    }
+    if bgQ == "none" || bgQ == "transparent" {
+      bg = image.Transparent
+    }
+
+    dpi := 72.0
+    hinting := "none"
+
+    fontfile := "./luxisr.ttf"
+
+    // Read the font data
+    fontBytes, err := ioutil.ReadFile(fontfile)
     if err != nil {
       log.Println(err)
       return
@@ -49,14 +107,12 @@ func main() {
     }
 
     // Draw the background
-    fg, bg := image.White, image.Black
-    const imgW, imgH = 160, 20
-    rgba := image.NewRGBA(image.Rect(0, 0, imgW, imgH))
+    rgba := image.NewRGBA(image.Rect(0, 0, width, height))
     draw.Draw(rgba, rgba.Bounds(), bg, image.ZP, draw.Src)
 
     // Draw the text
     h := font.HintingNone
-    switch *hinting {
+    switch hinting {
     case "full":
       h = font.HintingFull
     }
@@ -64,14 +120,14 @@ func main() {
       Dst: rgba,
       Src: fg,
       Face: truetype.NewFace(f, &truetype.Options{
-        Size:    *size,
-        DPI:     *dpi,
+        Size:    size,
+        DPI:     dpi,
         Hinting: h,
       }),
     }
     x := 0
     y := 0
-    dy := int(math.Ceil(*size * *spacing * *dpi / 72))
+    dy := int(math.Ceil(size * lineheight * dpi / 72))
     d.Dot = fixed.Point26_6{
       X: fixed.I(x),
       Y: fixed.I(y),
@@ -96,28 +152,7 @@ func main() {
     }
   })
 
-  host := ":8080"
+  // Listen on port
+  host := ":9361"
   http.ListenAndServe(host, nil)
-  /*
-
-  // Save that RGBA image to disk.
-  outFile, err := os.Create("out.png")
-  if err != nil {
-    log.Println(err)
-    os.Exit(1)
-  }
-  defer outFile.Close()
-  b := bufio.NewWriter(outFile)
-  err = png.Encode(b, rgba)
-  if err != nil {
-    log.Println(err)
-    os.Exit(1)
-  }
-  err = b.Flush()
-  if err != nil {
-    log.Println(err)
-    os.Exit(1)
-  }
-  fmt.Println("Wrote out.png OK.")
-  */
 }
