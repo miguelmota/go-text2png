@@ -5,14 +5,9 @@ package main
  * I'm still a beginner at golang.
  */
 
- /*
-  TODO
-  dpi
-  hiting
-  port process env
- */
-
 import (
+  "fmt"
+  "os"
   "image"
   "image/draw"
   "image/png"
@@ -21,6 +16,7 @@ import (
   "log"
   "math"
   "net/http"
+  "html/template"
   "strconv"
 
   "github.com/golang/freetype/truetype"
@@ -29,7 +25,20 @@ import (
 )
 
 func main() {
-  // HTTP Request handler
+  // Cache html templates
+  var templates = template.Must(template.ParseFiles("./index.html"))
+
+  // HTTP Request handler for index
+  http.HandleFunc("/", func (w http.ResponseWriter, r *http.Request) {
+    w.Header().Set("Content-Type", "text/html")
+
+    err := templates.ExecuteTemplate(w, "index.html", nil)
+    if err != nil {
+      http.Error(w, err.Error(), http.StatusInternalServerError)
+    }
+  })
+
+  // HTTP Request handler for generating image
   http.HandleFunc("/image", func (w http.ResponseWriter, r *http.Request) {
     // Read query params
     text := []string{r.URL.Query().Get("text")}
@@ -55,6 +64,15 @@ func main() {
     size, err := strconv.ParseFloat(sizeQ, 64)
     if err != nil {
       size = 12.0
+    }
+
+    dpiQ := r.URL.Query().Get("dpi")
+    if dpiQ == "" {
+      dpiQ = "72"
+    }
+    dpi, err := strconv.ParseFloat(dpiQ, 64)
+    if err != nil {
+      dpi = 72.0
     }
 
     lineheightQ := r.URL.Query().Get("lineheight")
@@ -89,8 +107,10 @@ func main() {
       bg = image.Transparent
     }
 
-    dpi := 72.0
-    hinting := "none"
+    hinting := r.URL.Query().Get("hinting")
+    if hinting == "" {
+      hinting = "none"
+    }
 
     fontfile := "./luxisr.ttf"
 
@@ -152,7 +172,14 @@ func main() {
     }
   })
 
+  port := os.Getenv("PORT")
+  if port == "" {
+    port = "9361"
+  }
+
+  fmt.Println("Listening on " + port)
+
   // Listen on port
-  host := ":9361"
+  host := ":" + port
   http.ListenAndServe(host, nil)
 }

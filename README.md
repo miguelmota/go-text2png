@@ -1,15 +1,17 @@
-golang text to png
+# text2png
 
-WIP
+> golang server to convert text to PNG image.
+
+Uses [go-freetype](https://github.com/golang/freetype/).
+
+## Instructions
 
 ```bash
 go build main.go
 ./main
 ```
 
-[http://localhost:9361/image?text=hello](http://localhost:9361/image?text=hello)
-
-query params
+Query parameter options with defaults
 
 ```
 text=""
@@ -22,7 +24,7 @@ dpi=72
 hinting=none (none|full)
 ```
 
-Example
+## Example
 
 [http://localhost:9361/image?text=Hello+World&size=24&fg=black&bg=white&width=125&height=40](http://localhost:9361/image?text=Hello+World&size=24&fg=black&bg=white&width=125&height=40)
 
