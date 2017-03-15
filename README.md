@@ -26,7 +26,7 @@ Example
 
 [http://localhost:9361/image?text=Hello+World&size=24&fg=black&bg=white&width=125&height=40](http://localhost:9361/image?text=Hello+World&size=24&fg=black&bg=white&width=125&height=40)
 
-<img src="./example.png" width="300" />
+<img src="./example.png" height="40" />
 
 # License
 
